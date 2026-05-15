@@ -5,15 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>出差考勤管控驾驶舱</title>
   <script>
-    window.ECHARTS_CDN_SOURCES = [
-      "https://cdn.staticfile.net/echarts/5.5.1/echarts.min.js",
-      "https://lib.baomitu.com/echarts/5.5.1/echarts.min.js",
-      "https://registry.npmmirror.com/echarts/5.5.1/files/dist/echarts.min.js",
-      "https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js",
-      "https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.1/echarts.min.js"
-    ];
+    // 中国网络兜底：默认使用页面内置图表渲染，避免依赖任何外部 CDN。
+    window.USE_INLINE_CHARTS = true;
   </script>
-  <script src="https://cdn.staticfile.net/echarts/5.5.1/echarts.min.js"></script>
   <style>
     :root {
       --blue-900: #0f2f63;
@@ -419,6 +413,200 @@
 
     .chart.tall {
       height: 380px;
+    }
+
+    .fallback-chart {
+      width: 100%;
+      height: 100%;
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 12px;
+      padding: 8px 4px;
+    }
+
+    .fallback-bar-row {
+      display: grid;
+      grid-template-columns: 116px minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+    }
+
+    .fallback-bar-label,
+    .fallback-axis-label,
+    .fallback-heat-y {
+      color: #44556e;
+      font-size: 12px;
+      line-height: 1.25;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .fallback-track {
+      position: relative;
+      height: 24px;
+      border-radius: 5px;
+      background: #eef5ff;
+      overflow: hidden;
+    }
+
+    .fallback-bar {
+      height: 100%;
+      min-width: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 6px;
+      border: 0;
+      border-radius: 5px;
+      background: var(--blue-500);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .fallback-bar:hover,
+    .fallback-column:hover,
+    .fallback-heat-cell:hover {
+      filter: brightness(0.94);
+    }
+
+    .fallback-threshold-line {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 0;
+      border-left: 2px dashed var(--warn);
+      pointer-events: none;
+    }
+
+    .fallback-threshold-label {
+      position: absolute;
+      top: -18px;
+      transform: translateX(-50%);
+      color: #b76b00;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .fallback-column-chart {
+      height: 100%;
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(44px, 1fr);
+      align-items: end;
+      gap: 14px;
+      padding: 20px 8px 8px;
+      border-bottom: 1px solid #dce8f7;
+    }
+
+    .fallback-column-wrap {
+      min-width: 0;
+      height: 100%;
+      display: grid;
+      grid-template-rows: 1fr auto;
+      gap: 8px;
+      align-items: end;
+      justify-items: center;
+    }
+
+    .fallback-column {
+      width: 34px;
+      min-height: 4px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 4px;
+      border: 0;
+      border-radius: 5px 5px 0 0;
+      background: var(--blue-500);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .fallback-pie-wrap {
+      height: 100%;
+      display: grid;
+      grid-template-columns: minmax(180px, 0.9fr) minmax(160px, 1fr);
+      gap: 20px;
+      align-items: center;
+    }
+
+    .fallback-donut {
+      width: min(190px, 90%);
+      aspect-ratio: 1;
+      justify-self: center;
+      position: relative;
+      border-radius: 50%;
+      box-shadow: inset 0 0 0 1px #e3edf8;
+    }
+
+    .fallback-donut::after {
+      content: "";
+      position: absolute;
+      inset: 25%;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: inset 0 0 0 1px #e3edf8;
+    }
+
+    .fallback-legend {
+      display: grid;
+      gap: 8px;
+      align-content: center;
+    }
+
+    .fallback-legend-item {
+      display: grid;
+      grid-template-columns: 12px minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+      color: #44556e;
+      font-size: 12px;
+    }
+
+    .fallback-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+
+    .fallback-legend-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .fallback-heatmap {
+      height: 100%;
+      display: grid;
+      gap: 6px;
+      align-content: center;
+      overflow: auto;
+      padding: 4px;
+    }
+
+    .fallback-heat-row {
+      display: grid;
+      grid-template-columns: 92px repeat(var(--cols), minmax(58px, 1fr));
+      gap: 6px;
+      align-items: center;
+    }
+
+    .fallback-heat-cell {
+      min-height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 5px;
+      border: 1px solid rgba(38, 114, 217, 0.12);
+      color: #173b70;
+      font-size: 12px;
+      font-weight: 700;
     }
 
     .table-wrap {
@@ -1065,35 +1253,6 @@
     };
 
     let chartPool = [];
-    let echartsLoaderPromise = null;
-
-    function loadEchartsFromMirrors() {
-      if (window.echarts) return Promise.resolve(window.echarts);
-      if (echartsLoaderPromise) return echartsLoaderPromise;
-
-      const sources = window.ECHARTS_CDN_SOURCES || [];
-      echartsLoaderPromise = new Promise((resolve, reject) => {
-        let index = 0;
-        const tryNext = () => {
-          if (window.echarts) {
-            resolve(window.echarts);
-            return;
-          }
-          if (index >= sources.length) {
-            reject(new Error("ECharts CDN mirrors unavailable"));
-            return;
-          }
-          const script = document.createElement("script");
-          script.src = sources[index++];
-          script.async = true;
-          script.onload = () => window.echarts ? resolve(window.echarts) : tryNext();
-          script.onerror = tryNext;
-          document.head.appendChild(script);
-        };
-        tryNext();
-      });
-      return echartsLoaderPromise;
-    }
 
     function pct(value) {
       return `${((value || 0) * 100).toFixed(1)}%`;
@@ -1380,22 +1539,183 @@
       `;
     }
 
+    const inlineChartColors = ["#5575d9", "#8fd175", "#ffd166", "#f26d6d", "#56c2d6", "#6aa7ff", "#f7a45a", "#7a89d8"];
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      }[char]));
+    }
+
+    function chartUnit(option) {
+      const formatter = option?.xAxis?.axisLabel?.formatter || option?.yAxis?.axisLabel?.formatter || "";
+      return String(formatter).includes("%") ? "%" : "";
+    }
+
+    function normalizeSeriesValue(item) {
+      if (Array.isArray(item)) return Number(item[item.length - 1] || 0);
+      if (typeof item === "object" && item !== null) return Number(item.value || 0);
+      return Number(item || 0);
+    }
+
+    function renderInlineChart(id, option, clickHandler) {
+      const node = document.getElementById(id);
+      if (!node) return;
+      const series = option.series && option.series[0] ? option.series[0] : {};
+      if (series.type === "pie") renderInlinePie(node, series.data || []);
+      else if (series.type === "heatmap") renderInlineHeatmap(node, option, series);
+      else if (series.type === "bar") renderInlineBar(node, option, series, clickHandler);
+      else node.innerHTML = "<div class='empty'>暂无图表数据</div>";
+      chartPool.push({ dispose() {}, resize() {} });
+    }
+
+    function renderInlineBar(node, option, series, clickHandler) {
+      const horizontal = option?.yAxis?.type === "category";
+      const names = horizontal ? (option.yAxis.data || []) : (option.xAxis.data || []);
+      const values = (series.data || []).map(normalizeSeriesValue);
+      const threshold = series.markLine?.data?.[0]?.xAxis;
+      const unit = chartUnit(option);
+      const maxValue = Math.max(1, threshold || 0, ...values, unit === "%" ? 100 : 0);
+      const color = typeof series.itemStyle?.color === "string" ? series.itemStyle.color : "#2f80ed";
+
+      if (!names.length) {
+        node.innerHTML = "<div class='empty'>暂无图表数据</div>";
+        return;
+      }
+
+      if (horizontal) {
+        node.innerHTML = `
+          <div class="fallback-chart">
+            ${names.map((name, index) => {
+              const value = values[index] || 0;
+              const width = Math.max(1, Math.min(100, value / maxValue * 100));
+              const thresholdLeft = threshold === undefined ? "" : `
+                <span class="fallback-threshold-line" style="left:${Math.min(100, threshold / maxValue * 100)}%"></span>
+                ${index === 0 ? `<span class="fallback-threshold-label" style="left:${Math.min(100, threshold / maxValue * 100)}%">阈值 ${threshold}${unit}</span>` : ""}
+              `;
+              return `
+                <div class="fallback-bar-row">
+                  <div class="fallback-bar-label" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
+                  <div class="fallback-track">
+                    <button class="fallback-bar" data-index="${index}" style="width:${width}%;background:${color};">${escapeHtml(value)}${unit}</button>
+                    ${thresholdLeft}
+                  </div>
+                </div>
+              `;
+            }).join("")}
+          </div>
+        `;
+      } else {
+        node.innerHTML = `
+          <div class="fallback-column-chart">
+            ${names.map((name, index) => {
+              const value = values[index] || 0;
+              const height = Math.max(4, Math.min(100, value / maxValue * 100));
+              return `
+                <div class="fallback-column-wrap">
+                  <button class="fallback-column" data-index="${index}" style="height:${height}%;background:${color};">${escapeHtml(value)}</button>
+                  <div class="fallback-axis-label" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
+                </div>
+              `;
+            }).join("")}
+          </div>
+        `;
+      }
+
+      if (clickHandler) {
+        node.querySelectorAll("[data-index]").forEach(button => {
+          button.addEventListener("click", () => {
+            const index = Number(button.dataset.index);
+            clickHandler({ name: names[index], value: values[index], dataIndex: index });
+          });
+        });
+      }
+    }
+
+    function renderInlinePie(node, rawData) {
+      const data = rawData.length ? rawData : [{ name: "暂无异常", value: 1 }];
+      const total = data.reduce((sum, item) => sum + Number(item.value || 0), 0) || 1;
+      let cursor = 0;
+      const gradient = data.map((item, index) => {
+        const value = Number(item.value || 0);
+        const start = cursor / total * 360;
+        cursor += value;
+        const end = cursor / total * 360;
+        const color = item.itemStyle?.color || inlineChartColors[index % inlineChartColors.length];
+        return `${color} ${start}deg ${end}deg`;
+      }).join(", ");
+
+      node.innerHTML = `
+        <div class="fallback-chart">
+          <div class="fallback-pie-wrap">
+            <div class="fallback-donut" style="background:conic-gradient(${gradient});"></div>
+            <div class="fallback-legend">
+              ${data.map((item, index) => {
+                const color = item.itemStyle?.color || inlineChartColors[index % inlineChartColors.length];
+                const value = Number(item.value || 0);
+                return `
+                  <div class="fallback-legend-item">
+                    <span class="fallback-dot" style="background:${color};"></span>
+                    <span class="fallback-legend-name" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</span>
+                    <strong>${value} · ${((value / total) * 100).toFixed(1)}%</strong>
+                  </div>
+                `;
+              }).join("")}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderInlineHeatmap(node, option, series) {
+      const xData = option.xAxis?.data || [];
+      const yData = option.yAxis?.data || [];
+      const data = series.data || [];
+      const max = Math.max(1, ...data.map(item => Number(item[2] || 0)));
+      const isDangerScale = JSON.stringify(option.visualMap?.inRange?.color || []).includes("d93025");
+      const cellMap = new Map(data.map(item => [`${item[0]}-${item[1]}`, Number(item[2] || 0)]));
+
+      if (!xData.length || !yData.length) {
+        node.innerHTML = "<div class='empty'>暂无图表数据</div>";
+        return;
+      }
+
+      node.innerHTML = `
+        <div class="fallback-heatmap" style="--cols:${xData.length}">
+          <div class="fallback-heat-row">
+            <div></div>
+            ${xData.map(name => `<div class="fallback-axis-label" title="${escapeHtml(name)}">${escapeHtml(name)}</div>`).join("")}
+          </div>
+          ${yData.map((rowName, y) => `
+            <div class="fallback-heat-row">
+              <div class="fallback-heat-y" title="${escapeHtml(rowName)}">${escapeHtml(rowName)}</div>
+              ${xData.map((_, x) => {
+                const value = cellMap.get(`${x}-${y}`) || 0;
+                const alpha = 0.12 + (value / max) * 0.72;
+                const bg = isDangerScale ? `rgba(217, 48, 37, ${alpha})` : `rgba(47, 128, 237, ${alpha})`;
+                return `<div class="fallback-heat-cell" style="background:${bg};">${escapeHtml(value)}</div>`;
+              }).join("")}
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
     function initChart(id, option, clickHandler) {
       const node = document.getElementById(id);
       if (!node) return;
-      if (!window.echarts) {
-        node.innerHTML = "<div class='empty'>图表组件加载中，正在切换国内镜像...</div>";
-        loadEchartsFromMirrors()
-          .then(() => initChart(id, option, clickHandler))
-          .catch(() => {
-            node.innerHTML = "<div class='empty'>图表组件加载失败，请检查网络或改用国内静态托管。</div>";
-          });
+      if (window.echarts && !window.USE_INLINE_CHARTS) {
+        const chart = echarts.init(node);
+        chart.setOption(option);
+        if (clickHandler) chart.on("click", clickHandler);
+        chartPool.push(chart);
         return;
       }
-      const chart = echarts.init(node);
-      chart.setOption(option);
-      if (clickHandler) chart.on("click", clickHandler);
-      chartPool.push(chart);
+      renderInlineChart(id, option, clickHandler);
     }
 
     function disposeCharts() {
