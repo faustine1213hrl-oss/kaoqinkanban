@@ -426,7 +426,20 @@
       padding: 8px 4px;
     }
 
+    .fallback-bar-chart {
+      gap: 7px;
+      padding: 10px 10px 6px;
+    }
+
     .fallback-bar-row {
+      display: grid;
+      grid-template-columns: 116px minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+    }
+
+    .fallback-threshold-row,
+    .fallback-scale-row {
       display: grid;
       grid-template-columns: 116px minmax(0, 1fr);
       align-items: center;
@@ -446,19 +459,29 @@
 
     .fallback-track {
       position: relative;
-      height: 24px;
+      height: 20px;
       border-radius: 5px;
-      background: #eef5ff;
-      overflow: hidden;
+      border: 1px solid #dce8f7;
+      background:
+        repeating-linear-gradient(
+          90deg,
+          #eef5ff 0,
+          #eef5ff calc(25% - 1px),
+          rgba(38, 114, 217, 0.11) calc(25% - 1px),
+          rgba(38, 114, 217, 0.11) 25%
+        );
+      overflow: visible;
     }
 
     .fallback-bar {
+      position: relative;
       height: 100%;
       min-width: 2px;
+      max-width: 100%;
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      padding-right: 6px;
+      padding: 0 6px;
       border: 0;
       border-radius: 5px;
       background: var(--blue-500);
@@ -466,6 +489,33 @@
       font-size: 12px;
       font-weight: 700;
       cursor: pointer;
+      box-shadow: 0 3px 9px rgba(47, 128, 237, 0.2);
+      white-space: nowrap;
+      overflow: visible;
+      transition: width 0.18s ease, filter 0.18s ease;
+    }
+
+    .fallback-bar[data-zero="true"] {
+      min-width: 0;
+    }
+
+    .fallback-bar-value {
+      position: absolute;
+      top: 50%;
+      z-index: 3;
+      transform: translate(calc(-100% - 6px), -50%);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .fallback-bar-value.outside {
+      transform: translate(7px, -50%);
+      color: #173b70;
+      text-shadow: none;
     }
 
     .fallback-bar:hover,
@@ -481,15 +531,35 @@
       width: 0;
       border-left: 2px dashed var(--warn);
       pointer-events: none;
+      z-index: 2;
+    }
+
+    .fallback-threshold-track {
+      position: relative;
+      height: 22px;
     }
 
     .fallback-threshold-label {
       position: absolute;
-      top: -18px;
+      top: 0;
       transform: translateX(-50%);
+      padding: 2px 7px;
+      border: 1px solid rgba(245, 158, 11, 0.38);
+      border-radius: 999px;
+      background: #fff8e8;
       color: #b76b00;
       font-size: 12px;
+      font-weight: 700;
       white-space: nowrap;
+      box-shadow: 0 3px 8px rgba(245, 158, 11, 0.12);
+    }
+
+    .fallback-scale {
+      display: flex;
+      justify-content: space-between;
+      color: #7a8aa1;
+      font-size: 11px;
+      line-height: 1;
     }
 
     .fallback-column-chart {
@@ -532,8 +602,8 @@
     .fallback-pie-wrap {
       height: 100%;
       display: grid;
-      grid-template-columns: minmax(180px, 0.9fr) minmax(160px, 1fr);
-      gap: 20px;
+      grid-template-columns: minmax(190px, 0.9fr) minmax(190px, 1fr);
+      gap: 22px;
       align-items: center;
     }
 
@@ -542,8 +612,10 @@
       aspect-ratio: 1;
       justify-self: center;
       position: relative;
+      display: grid;
+      place-items: center;
       border-radius: 50%;
-      box-shadow: inset 0 0 0 1px #e3edf8;
+      box-shadow: 0 10px 24px rgba(22, 66, 125, 0.1), inset 0 0 0 1px #e3edf8;
     }
 
     .fallback-donut::after {
@@ -553,11 +625,31 @@
       border-radius: 50%;
       background: #fff;
       box-shadow: inset 0 0 0 1px #e3edf8;
+      z-index: 0;
+    }
+
+    .fallback-donut-total {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 2px;
+      text-align: center;
+      color: #173b70;
+    }
+
+    .fallback-donut-total strong {
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .fallback-donut-total span {
+      color: var(--muted);
+      font-size: 12px;
     }
 
     .fallback-legend {
       display: grid;
-      gap: 8px;
+      gap: 7px;
       align-content: center;
     }
 
@@ -566,6 +658,11 @@
       grid-template-columns: 12px minmax(0, 1fr) auto;
       gap: 8px;
       align-items: center;
+      min-height: 28px;
+      padding: 4px 7px;
+      border: 1px solid #e3edf8;
+      border-radius: 6px;
+      background: #f8fbff;
       color: #44556e;
       font-size: 12px;
     }
@@ -1556,6 +1653,12 @@
       return String(formatter).includes("%") ? "%" : "";
     }
 
+    function formatChartValue(value) {
+      const num = Number(value || 0);
+      if (Number.isInteger(num)) return String(num);
+      return num.toFixed(1).replace(/\.0$/, "");
+    }
+
     function normalizeSeriesValue(item) {
       if (Array.isArray(item)) return Number(item[item.length - 1] || 0);
       if (typeof item === "object" && item !== null) return Number(item.value || 0);
@@ -1581,6 +1684,8 @@
       const unit = chartUnit(option);
       const maxValue = Math.max(1, threshold || 0, ...values, unit === "%" ? 100 : 0);
       const color = typeof series.itemStyle?.color === "string" ? series.itemStyle.color : "#2f80ed";
+      const thresholdPercent = threshold === undefined ? undefined : Math.max(0, Math.min(100, threshold / maxValue * 100));
+      const thresholdTransform = thresholdPercent === undefined ? "" : thresholdPercent > 88 ? "translateX(-100%)" : thresholdPercent < 12 ? "translateX(0)" : "translateX(-50%)";
 
       if (!names.length) {
         node.innerHTML = "<div class='empty'>暂无图表数据</div>";
@@ -1589,24 +1694,39 @@
 
       if (horizontal) {
         node.innerHTML = `
-          <div class="fallback-chart">
+          <div class="fallback-chart fallback-bar-chart">
+            ${threshold !== undefined ? `
+              <div class="fallback-threshold-row">
+                <span></span>
+                <div class="fallback-threshold-track">
+                  <span class="fallback-threshold-label" style="left:${thresholdPercent}%;transform:${thresholdTransform};">阈值 ${formatChartValue(threshold)}${unit}</span>
+                </div>
+              </div>
+            ` : ""}
             ${names.map((name, index) => {
               const value = values[index] || 0;
-              const width = Math.max(1, Math.min(100, value / maxValue * 100));
-              const thresholdLeft = threshold === undefined ? "" : `
-                <span class="fallback-threshold-line" style="left:${Math.min(100, threshold / maxValue * 100)}%"></span>
-                ${index === 0 ? `<span class="fallback-threshold-label" style="left:${Math.min(100, threshold / maxValue * 100)}%">阈值 ${threshold}${unit}</span>` : ""}
-              `;
+              const width = value <= 0 ? 0 : Math.max(1, Math.min(100, value / maxValue * 100));
+              const valueClass = width < 14 ? "fallback-bar-value outside" : "fallback-bar-value";
+              const thresholdLeft = threshold === undefined ? "" : `<span class="fallback-threshold-line" style="left:${thresholdPercent}%"></span>`;
               return `
                 <div class="fallback-bar-row">
                   <div class="fallback-bar-label" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
                   <div class="fallback-track">
-                    <button class="fallback-bar" data-index="${index}" style="width:${width}%;background:${color};">${escapeHtml(value)}${unit}</button>
+                    <button class="fallback-bar" data-index="${index}" data-zero="${value <= 0}" aria-label="${escapeHtml(name)} ${escapeHtml(formatChartValue(value))}${unit}" title="${escapeHtml(name)} ${escapeHtml(formatChartValue(value))}${unit}" style="width:${width}%;background:${color};"></button>
+                    <span class="${valueClass}" style="left:${width}%">${escapeHtml(formatChartValue(value))}${unit}</span>
                     ${thresholdLeft}
                   </div>
                 </div>
               `;
             }).join("")}
+            <div class="fallback-scale-row">
+              <span></span>
+              <div class="fallback-scale">
+                <span>0${unit}</span>
+                <span>${formatChartValue(maxValue / 2)}${unit}</span>
+                <span>${formatChartValue(maxValue)}${unit}</span>
+              </div>
+            </div>
           </div>
         `;
       } else {
@@ -1617,7 +1737,7 @@
               const height = Math.max(4, Math.min(100, value / maxValue * 100));
               return `
                 <div class="fallback-column-wrap">
-                  <button class="fallback-column" data-index="${index}" style="height:${height}%;background:${color};">${escapeHtml(value)}</button>
+                  <button class="fallback-column" data-index="${index}" style="height:${height}%;background:${color};">${escapeHtml(formatChartValue(value))}</button>
                   <div class="fallback-axis-label" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
                 </div>
               `;
@@ -1652,7 +1772,12 @@
       node.innerHTML = `
         <div class="fallback-chart">
           <div class="fallback-pie-wrap">
-            <div class="fallback-donut" style="background:conic-gradient(${gradient});"></div>
+            <div class="fallback-donut" style="background:conic-gradient(${gradient});">
+              <div class="fallback-donut-total">
+                <strong>${formatChartValue(total)}</strong>
+                <span>合计</span>
+              </div>
+            </div>
             <div class="fallback-legend">
               ${data.map((item, index) => {
                 const color = item.itemStyle?.color || inlineChartColors[index % inlineChartColors.length];
