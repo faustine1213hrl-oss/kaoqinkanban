@@ -4,7 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>出差考勤管控驾驶舱</title>
-  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <script>
+    window.ECHARTS_CDN_SOURCES = [
+      "https://cdn.staticfile.net/echarts/5.5.1/echarts.min.js",
+      "https://lib.baomitu.com/echarts/5.5.1/echarts.min.js",
+      "https://registry.npmmirror.com/echarts/5.5.1/files/dist/echarts.min.js",
+      "https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js",
+      "https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.1/echarts.min.js"
+    ];
+  </script>
+  <script src="https://cdn.staticfile.net/echarts/5.5.1/echarts.min.js"></script>
   <style>
     :root {
       --blue-900: #0f2f63;
@@ -1056,6 +1065,35 @@
     };
 
     let chartPool = [];
+    let echartsLoaderPromise = null;
+
+    function loadEchartsFromMirrors() {
+      if (window.echarts) return Promise.resolve(window.echarts);
+      if (echartsLoaderPromise) return echartsLoaderPromise;
+
+      const sources = window.ECHARTS_CDN_SOURCES || [];
+      echartsLoaderPromise = new Promise((resolve, reject) => {
+        let index = 0;
+        const tryNext = () => {
+          if (window.echarts) {
+            resolve(window.echarts);
+            return;
+          }
+          if (index >= sources.length) {
+            reject(new Error("ECharts CDN mirrors unavailable"));
+            return;
+          }
+          const script = document.createElement("script");
+          script.src = sources[index++];
+          script.async = true;
+          script.onload = () => window.echarts ? resolve(window.echarts) : tryNext();
+          script.onerror = tryNext;
+          document.head.appendChild(script);
+        };
+        tryNext();
+      });
+      return echartsLoaderPromise;
+    }
 
     function pct(value) {
       return `${((value || 0) * 100).toFixed(1)}%`;
@@ -1346,7 +1384,12 @@
       const node = document.getElementById(id);
       if (!node) return;
       if (!window.echarts) {
-        node.innerHTML = "<div class='empty'>ECharts CDN 未加载，图表区域保留。</div>";
+        node.innerHTML = "<div class='empty'>图表组件加载中，正在切换国内镜像...</div>";
+        loadEchartsFromMirrors()
+          .then(() => initChart(id, option, clickHandler))
+          .catch(() => {
+            node.innerHTML = "<div class='empty'>图表组件加载失败，请检查网络或改用国内静态托管。</div>";
+          });
         return;
       }
       const chart = echarts.init(node);
