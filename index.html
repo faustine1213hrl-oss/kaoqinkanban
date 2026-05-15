@@ -1,0 +1,2019 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>出差考勤管控驾驶舱</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <style>
+    :root {
+      --blue-900: #0f2f63;
+      --blue-800: #16427d;
+      --blue-700: #1e5aa8;
+      --blue-600: #2672d9;
+      --blue-500: #2f80ed;
+      --blue-100: #eaf3ff;
+      --blue-050: #f4f8ff;
+      --line: #d8e4f3;
+      --text: #1f2d3d;
+      --muted: #6b7a90;
+      --ok: #1677d2;
+      --warn: #f59e0b;
+      --danger: #d93025;
+      --danger-bg: #fff1f0;
+      --green: #10a36a;
+      --card: #ffffff;
+      --shadow: 0 8px 24px rgba(22, 66, 125, 0.1);
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-width: 1280px;
+      background: #eef4fb;
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+      letter-spacing: 0;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .topbar {
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      color: #fff;
+      background: linear-gradient(90deg, var(--blue-900), var(--blue-700));
+      box-shadow: 0 6px 18px rgba(15, 47, 99, 0.22);
+    }
+
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255, 255, 255, 0.42);
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.12);
+      font-weight: 700;
+    }
+
+    .brand-title h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1.15;
+    }
+
+    .brand-title p {
+      margin: 6px 0 0;
+      color: rgba(255, 255, 255, 0.74);
+      font-size: 13px;
+    }
+
+    .topbar-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.86);
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 228px 1fr;
+      min-height: calc(100vh - 72px);
+      padding-bottom: 54px;
+    }
+
+    .sidebar {
+      background: #fff;
+      border-right: 1px solid var(--line);
+      padding: 18px 14px;
+    }
+
+    .side-section-title {
+      margin: 10px 10px 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .nav-item {
+      width: 100%;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 5px 0;
+      padding: 0 12px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: #33435c;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .nav-item:hover {
+      background: var(--blue-050);
+      color: var(--blue-700);
+    }
+
+    .nav-item.active {
+      background: var(--blue-100);
+      color: var(--blue-800);
+      font-weight: 700;
+    }
+
+    .main {
+      padding: 18px 22px 28px;
+      overflow-x: auto;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(148px, 1fr));
+      gap: 12px;
+      padding: 14px;
+      margin-bottom: 14px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .filter-field {
+      min-width: 0;
+    }
+
+    .filter-field label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .filter-field select,
+    .filter-field input {
+      width: 100%;
+      height: 34px;
+      border: 1px solid #cad8e8;
+      border-radius: 5px;
+      padding: 0 10px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+
+    .filter-field select:focus,
+    .filter-field input:focus {
+      border-color: var(--blue-500);
+      box-shadow: 0 0 0 3px rgba(47, 128, 237, 0.12);
+    }
+
+    .filter-actions {
+      display: flex;
+      align-items: end;
+      gap: 8px;
+      min-width: 236px;
+    }
+
+    .btn {
+      height: 34px;
+      border: 1px solid var(--blue-600);
+      border-radius: 5px;
+      padding: 0 14px;
+      background: #fff;
+      color: var(--blue-700);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn.primary {
+      background: var(--blue-600);
+      color: #fff;
+    }
+
+    .btn.ghost {
+      border-color: #cad8e8;
+      color: #42526d;
+    }
+
+    .page-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      margin: 8px 0 14px;
+    }
+
+    .page-head h2 {
+      margin: 0;
+      color: #10284f;
+      font-size: 22px;
+      line-height: 1.25;
+    }
+
+    .page-desc {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .page-tools {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .tab-btn {
+      height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      padding: 0 16px;
+      background: #fff;
+      color: #3d4c63;
+      cursor: pointer;
+    }
+
+    .tab-btn.active {
+      border-color: var(--blue-600);
+      background: var(--blue-600);
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(158px, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .kpi-grid.compact {
+      grid-template-columns: repeat(5, minmax(180px, 1fr));
+    }
+
+    .kpi-card {
+      position: relative;
+      min-height: 112px;
+      padding: 14px 14px 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .kpi-name {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: #3b4b63;
+      font-size: 13px;
+    }
+
+    .info {
+      width: 18px;
+      height: 18px;
+      display: inline-grid;
+      place-items: center;
+      border: 1px solid #b7cbe2;
+      border-radius: 50%;
+      background: var(--blue-050);
+      color: var(--blue-700);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      flex: 0 0 auto;
+    }
+
+    .formula-tip {
+      display: none;
+      position: absolute;
+      z-index: 5;
+      top: 40px;
+      right: 12px;
+      width: 250px;
+      padding: 10px 12px;
+      border: 1px solid #bad1ec;
+      border-radius: 6px;
+      background: #fff;
+      color: #31425c;
+      font-size: 12px;
+      line-height: 1.55;
+      box-shadow: 0 10px 24px rgba(15, 47, 99, 0.16);
+    }
+
+    .info:hover + .formula-tip,
+    .formula-tip:hover {
+      display: block;
+    }
+
+    .kpi-value {
+      margin-top: 12px;
+      color: var(--blue-800);
+      font-size: 29px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .kpi-value.danger {
+      color: var(--danger);
+    }
+
+    .kpi-value.warn {
+      color: var(--warn);
+    }
+
+    .kpi-sub {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .grid-2,
+    .grid-3 {
+      display: grid;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .grid-2 {
+      grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.9fr);
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .panel {
+      min-width: 0;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .panel-title {
+      margin: 0;
+      color: #152d52;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .panel-note {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .chart {
+      width: 100%;
+      height: 310px;
+    }
+
+    .chart.short {
+      height: 250px;
+    }
+
+    .chart.tall {
+      height: 380px;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+    }
+
+    table {
+      width: 100%;
+      min-width: 1020px;
+      border-collapse: collapse;
+      background: #fff;
+      font-size: 13px;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      height: 40px;
+      padding: 0 10px;
+      background: #eaf3ff;
+      color: #24476f;
+      text-align: left;
+      font-weight: 700;
+      border-bottom: 1px solid var(--line);
+      white-space: nowrap;
+    }
+
+    tbody td {
+      min-height: 42px;
+      padding: 10px;
+      border-bottom: 1px solid #edf2f8;
+      color: #31425c;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    tbody tr:hover {
+      background: #f7fbff;
+    }
+
+    tbody tr.abnormal {
+      background: var(--danger-bg);
+    }
+
+    .link {
+      border: 0;
+      background: transparent;
+      color: var(--blue-700);
+      cursor: pointer;
+      padding: 0;
+      font-weight: 700;
+    }
+
+    .link + .link {
+      margin-left: 10px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      height: 22px;
+      padding: 0 8px;
+      border-radius: 11px;
+      background: var(--blue-100);
+      color: var(--blue-800);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .tag.danger {
+      background: #ffe5e2;
+      color: var(--danger);
+    }
+
+    .tag.warn {
+      background: #fff4db;
+      color: #b76b00;
+    }
+
+    .tag.green {
+      background: #e7f7ef;
+      color: var(--green);
+    }
+
+    .pager {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      color: var(--muted);
+      background: #fbfdff;
+      font-size: 12px;
+    }
+
+    .pager-controls {
+      display: flex;
+      gap: 6px;
+    }
+
+    .pager-btn {
+      height: 24px;
+      min-width: 28px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: #fff;
+      color: #41536b;
+    }
+
+    .explain-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .explain-card {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fbfdff;
+    }
+
+    .explain-card h4 {
+      margin: 0 0 7px;
+      color: #203d66;
+      font-size: 14px;
+    }
+
+    .explain-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .flow-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .flow-step {
+      min-height: 32px;
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border: 1px solid #b9d3f0;
+      border-radius: 6px;
+      background: var(--blue-050);
+      color: #294f80;
+      font-size: 12px;
+      line-height: 1.25;
+    }
+
+    .flow-arrow {
+      color: var(--blue-600);
+      font-weight: 700;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .summary-item {
+      min-height: 74px;
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fbfdff;
+    }
+
+    .summary-label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .summary-value {
+      margin-top: 7px;
+      color: #203d66;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .breadcrumb-bar {
+      position: fixed;
+      z-index: 20;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 46px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 22px;
+      background: #fff;
+      border-top: 1px solid var(--line);
+      box-shadow: 0 -5px 18px rgba(15, 47, 99, 0.08);
+      color: #52647d;
+      font-size: 13px;
+    }
+
+    .breadcrumb-label {
+      color: #24476f;
+      font-weight: 700;
+    }
+
+    .breadcrumb-current {
+      color: var(--blue-700);
+      font-weight: 700;
+    }
+
+    .empty {
+      display: grid;
+      place-items: center;
+      min-height: 180px;
+      color: var(--muted);
+      border: 1px dashed #cbd9ea;
+      border-radius: 7px;
+      background: #fbfdff;
+    }
+
+    .toast {
+      position: fixed;
+      z-index: 50;
+      right: 24px;
+      top: 86px;
+      max-width: 420px;
+      display: none;
+      padding: 12px 14px;
+      border-radius: 7px;
+      background: #173b70;
+      color: #fff;
+      box-shadow: 0 10px 28px rgba(15, 47, 99, 0.22);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .toast.show {
+      display: block;
+    }
+
+    @media (max-width: 1500px) {
+      .filters {
+        grid-template-columns: repeat(4, minmax(148px, 1fr));
+      }
+
+      .kpi-grid {
+        grid-template-columns: repeat(4, minmax(168px, 1fr));
+      }
+
+      .grid-2,
+      .flow-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-title">
+      <div class="brand-mark">勤</div>
+      <div>
+        <h1>出差考勤管控驾驶舱</h1>
+        <p>领导驾驶舱原型 · 出差达标、异常追溯、单位对比、人员明细下钻</p>
+      </div>
+    </div>
+    <div class="topbar-meta">
+      <span>数据周期：2026</span>
+      <span>口径：仅统计出差相关数据</span>
+      <span id="topStateText">总览</span>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="side-section-title">驾驶舱视图</div>
+      <button class="nav-item active" data-view="overview" onclick="navigateTo('overview')">总览页</button>
+      <button class="nav-item" data-view="unit" onclick="navigateTo('unit')">单位下钻页</button>
+      <button class="nav-item" data-view="board" onclick="navigateTo('board')">单位班子情况页</button>
+      <button class="nav-item" data-view="employee" onclick="navigateTo('employee')">单位员工情况页</button>
+      <button class="nav-item" data-view="person" onclick="navigateTo('person')">个人明细页</button>
+      <div class="side-section-title">当前口径</div>
+      <div class="explain-card">
+        <h4>分类说明</h4>
+        <p>营销大区只统计跨区域出差；运营部门、职能部门按正常出差天数计算出差率。</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="filters" id="filters"></section>
+      <section id="content"></section>
+    </main>
+  </div>
+
+  <footer class="breadcrumb-bar">
+    <span class="breadcrumb-label">下钻路径</span>
+    <span id="breadcrumbText">总览 → 分类/单位 → 单位详情 → 班子页面/员工页面 → 个人明细 → 每日出差明细</span>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // =============================
+    // 模拟数据位置：单位、人员、出差明细
+    // =============================
+    const BOARD_LEVELS = [
+      "股份中干副职",
+      "浓香公司中层管理人员",
+      "浓香公司中层管理人员（试用期）",
+      "股份中干副职（试用期）"
+    ];
+
+    const EXCEPTION_TYPES = [
+      "低于出差下限",
+      "未报备跨区域出差",
+      "跨区域出差超阈值",
+      "单一地市/区县占比超阈值",
+      "数据待核验"
+    ];
+
+    const unitData = [
+      { unit: "重庆大区", category: "营销大区" },
+      { unit: "四川大区", category: "营销大区" },
+      { unit: "京津大区", category: "营销大区" },
+      { unit: "河南大区", category: "营销大区" },
+      { unit: "消费者运营部", category: "运营部门" },
+      { unit: "尖庄品牌运营部", category: "运营部门" },
+      { unit: "五粮春品牌运营部", category: "运营部门" },
+      { unit: "人力资源部", category: "职能部门" },
+      { unit: "财务管理部", category: "职能部门" },
+      { unit: "审计监督部", category: "职能部门" }
+    ];
+
+    // =============================
+    // 区域边界配置位置：用于营销大区跨区域判断
+    // =============================
+    const regionBoundaryConfig = [
+      {
+        unit: "重庆大区",
+        regionType: "营销大区",
+        province: "重庆市",
+        citiesOrDistricts: ["渝北区", "江北区", "南岸区", "九龙坡区"],
+        effectiveDate: "2026-01-01",
+        enabled: true
+      },
+      {
+        unit: "四川大区",
+        regionType: "营销大区",
+        province: "四川省",
+        citiesOrDistricts: ["成都市", "宜宾市", "泸州市", "乐山市"],
+        effectiveDate: "2026-01-01",
+        enabled: true
+      },
+      {
+        unit: "京津大区",
+        regionType: "营销大区",
+        province: "北京市/天津市",
+        citiesOrDistricts: ["北京市", "天津市", "朝阳区", "海淀区", "和平区"],
+        effectiveDate: "2026-01-01",
+        enabled: true
+      },
+      {
+        unit: "河南大区",
+        regionType: "营销大区",
+        province: "河南省",
+        citiesOrDistricts: ["郑州市", "洛阳市", "许昌市", "南阳市"],
+        effectiveDate: "2026-01-01",
+        enabled: true
+      }
+    ];
+
+    // =============================
+    // 阈值配置位置：不同分类使用不同阈值
+    // =============================
+    const thresholdConfig = [
+      { category: "运营部门", thresholdType: "个人出差率下限", lowerRate: 0.12, label: "≥12%" },
+      { category: "职能部门", thresholdType: "个人出差率下限", lowerRate: 0.08, label: "≥8%" },
+      { category: "营销大区", thresholdType: "跨区域出差上限", upperRate: 0.18, upperDays: 4, singleCityUpperRate: 0.6, label: "≤18%且≤4天" }
+    ];
+
+    const unitProfiles = {
+      "重庆大区": {
+        inside: [["重庆市", "渝北区"], ["重庆市", "江北区"], ["重庆市", "南岸区"]],
+        outside: [["四川省", "成都市"], ["贵州省", "贵阳市"], ["湖北省", "武汉市"]]
+      },
+      "四川大区": {
+        inside: [["四川省", "成都市"], ["四川省", "宜宾市"], ["四川省", "泸州市"]],
+        outside: [["重庆市", "渝北区"], ["云南省", "昆明市"], ["陕西省", "西安市"]]
+      },
+      "京津大区": {
+        inside: [["北京市/天津市", "北京市"], ["北京市/天津市", "天津市"], ["北京市/天津市", "朝阳区"]],
+        outside: [["河北省", "石家庄市"], ["山东省", "济南市"], ["河南省", "郑州市"]]
+      },
+      "河南大区": {
+        inside: [["河南省", "郑州市"], ["河南省", "洛阳市"], ["河南省", "许昌市"]],
+        outside: [["湖北省", "武汉市"], ["安徽省", "合肥市"], ["江苏省", "南京市"]]
+      },
+      "消费者运营部": {
+        normal: [["上海市", "上海市"], ["浙江省", "杭州市"], ["广东省", "广州市"], ["四川省", "成都市"]]
+      },
+      "尖庄品牌运营部": {
+        normal: [["四川省", "宜宾市"], ["河南省", "郑州市"], ["山东省", "济南市"], ["湖南省", "长沙市"]]
+      },
+      "五粮春品牌运营部": {
+        normal: [["重庆市", "渝北区"], ["江苏省", "南京市"], ["浙江省", "杭州市"], ["福建省", "厦门市"]]
+      },
+      "人力资源部": {
+        normal: [["四川省", "宜宾市"], ["北京市/天津市", "北京市"], ["上海市", "上海市"], ["广东省", "深圳市"]]
+      },
+      "财务管理部": {
+        normal: [["四川省", "宜宾市"], ["重庆市", "江北区"], ["江苏省", "苏州市"], ["浙江省", "杭州市"]]
+      },
+      "审计监督部": {
+        normal: [["河南省", "郑州市"], ["湖北省", "武汉市"], ["四川省", "泸州市"], ["陕西省", "西安市"]]
+      }
+    };
+
+    const personNames = {
+      "重庆大区": ["周启明", "陈婧", "唐浩", "罗雨"],
+      "四川大区": ["蒋文峰", "邓珊", "何涛", "袁莉"],
+      "京津大区": ["赵恒", "刘悦", "孙越", "马晓"],
+      "河南大区": ["郭磊", "魏宁", "许琳", "高远"],
+      "消费者运营部": ["秦泽", "韩雪", "宋扬", "冯睿"],
+      "尖庄品牌运营部": ["郑嘉", "潘舒", "谢航", "彭月"],
+      "五粮春品牌运营部": ["梁栩", "田心", "朱凯", "戴娜"],
+      "人力资源部": ["林晓", "侯杰", "白露", "苏然"],
+      "财务管理部": ["孟凡", "夏青", "汪洋", "吕佳"],
+      "审计监督部": ["段宏", "乔安", "尹峰", "陆敏"]
+    };
+
+    function getBoardLevel(index) {
+      return BOARD_LEVELS[index % BOARD_LEVELS.length];
+    }
+
+    function makeDetails(unit, personIndex, category) {
+      const profile = unitProfiles[unit];
+      const rows = [];
+      const dates = ["2026-05-02", "2026-05-06", "2026-05-11", "2026-05-16", "2026-05-22", "2026-05-27"];
+      const normalDays = personIndex === 2 ? [0.5, 0, 0.5, 0, 0.5, 0] : personIndex === 3 ? [1, 1, 1, 0.5, 1, 0.5] : [1, 0.5, 1, 1, 0.5, 1];
+      const marketingDays = personIndex === 1 ? [1, 1, 1, 0.5, 1, 0.5] : personIndex === 2 ? [0.5, 0.5, 1, 0, 0.5, 0] : [1, 0.5, 1, 0.5, 0.5, 1];
+
+      dates.forEach((date, i) => {
+        if (category === "营销大区") {
+          const useOutside = (personIndex === 1 && i !== 3) || (personIndex === 3 && i > 1) || (personIndex === 0 && i === 2);
+          const citySet = useOutside ? profile.outside : profile.inside;
+          const target = citySet[i % citySet.length];
+          const missingCheck = unit === "河南大区" && personIndex === 2 && i === 4;
+          rows.push({
+            date,
+            province: missingCheck ? "" : target[0],
+            city: missingCheck ? "待核验地市" : target[1],
+            days: marketingDays[i],
+            reported: !(useOutside && ((personIndex === 1 && i === 1) || (personIndex === 3 && i === 2))),
+            counted: marketingDays[i] > 0,
+            abnormalNote: ""
+          });
+        } else {
+          const target = profile.normal[i % profile.normal.length];
+          rows.push({
+            date,
+            province: target[0],
+            city: target[1],
+            days: normalDays[i],
+            reported: true,
+            counted: normalDays[i] > 0,
+            abnormalNote: ""
+          });
+        }
+      });
+      return rows;
+    }
+
+    function makePeople() {
+      let number = 1001;
+      return unitData.flatMap((unitInfo, unitIndex) => {
+        return personNames[unitInfo.unit].map((name, personIndex) => {
+          const isLeadership = personIndex === 0 || personIndex === 1;
+          const level = isLeadership ? getBoardLevel(unitIndex + personIndex) : (personIndex === 2 ? "主管/业务骨干" : "普通员工");
+          const workDays = 22;
+          const leaveDays = personIndex === 3 ? 1 : 0;
+          const deductDays = unitInfo.category === "职能部门" && personIndex === 2 ? 1 : 0;
+          const position = isLeadership ? "单位负责人" : (unitInfo.category === "营销大区" ? "市场经理" : "业务专员");
+          return {
+            id: `P${number++}`,
+            name,
+            employeeNo: `YC${number}`,
+            unit: unitInfo.unit,
+            category: unitInfo.category,
+            position,
+            level,
+            isLeadership,
+            workDays,
+            leaveDays,
+            deductDays,
+            thresholdType: unitInfo.category === "营销大区" ? "跨区域出差上限" : "个人出差率下限",
+            details: makeDetails(unitInfo.unit, personIndex, unitInfo.category)
+          };
+        });
+      });
+    }
+
+    let peopleData = makePeople();
+
+    // =============================
+    // 异常判断位置：补充应考核天数、出差率、跨区域出差率、异常类型
+    // =============================
+    function evaluatePeople() {
+      peopleData = peopleData.map(person => {
+        const assessDays = Math.max(0, person.workDays - person.leaveDays - person.deductDays);
+        const threshold = thresholdConfig.find(item => item.category === person.category);
+        const boundary = regionBoundaryConfig.find(item => item.unit === person.unit && item.enabled);
+        let businessDays = 0;
+        let crossRegionDays = 0;
+        const destinationDays = {};
+        const abnormalTypes = new Set();
+        const enhancedDetails = person.details.map(detail => {
+          const countedDays = detail.counted ? Number(detail.days || 0) : 0;
+          businessDays += countedDays;
+          let isCrossRegion = false;
+          let rowAbnormal = false;
+          let note = "";
+          const pendingData = !detail.province || !detail.city || !threshold;
+
+          if (person.category === "营销大区") {
+            if (!boundary || pendingData) {
+              abnormalTypes.add("数据待核验");
+              rowAbnormal = true;
+              note = "区域边界、阈值或目的地信息缺失，需人工核验";
+            } else {
+              isCrossRegion = !(detail.province === boundary.province && boundary.citiesOrDistricts.includes(detail.city));
+              if (isCrossRegion) {
+                crossRegionDays += countedDays;
+                destinationDays[detail.city] = (destinationDays[detail.city] || 0) + countedDays;
+                if (!detail.reported && countedDays > 0) {
+                  abnormalTypes.add("未报备跨区域出差");
+                  rowAbnormal = true;
+                  note = "存在跨区域出差但未匹配到报备记录";
+                }
+              }
+            }
+          } else if (pendingData) {
+            abnormalTypes.add("数据待核验");
+            rowAbnormal = true;
+            note = "阈值或目的地信息缺失，需人工核验";
+          }
+
+          return {
+            ...detail,
+            isCrossRegion,
+            rowAbnormal,
+            abnormalNote: note
+          };
+        });
+
+        const travelRate = assessDays ? businessDays / assessDays : 0;
+        const crossRegionRate = assessDays ? crossRegionDays / assessDays : 0;
+
+        if (person.category === "营销大区" && threshold) {
+          const maxCityDays = Math.max(0, ...Object.values(destinationDays));
+          const singleCityRate = crossRegionDays ? maxCityDays / crossRegionDays : 0;
+          if (crossRegionDays > 0 && (crossRegionRate > threshold.upperRate || crossRegionDays > threshold.upperDays)) {
+            abnormalTypes.add("跨区域出差超阈值");
+          }
+          if (crossRegionDays > 0 && singleCityRate > threshold.singleCityUpperRate) {
+            abnormalTypes.add("单一地市/区县占比超阈值");
+          }
+        }
+
+        if (person.category !== "营销大区" && threshold && travelRate < threshold.lowerRate) {
+          abnormalTypes.add("低于出差下限");
+        }
+
+        const abnormalTypeList = [...abnormalTypes];
+        return {
+          ...person,
+          assessDays,
+          businessDays,
+          crossRegionDays,
+          travelRate,
+          crossRegionRate,
+          threshold: threshold ? threshold.label : "未配置",
+          thresholdConfig: threshold,
+          isAbnormal: abnormalTypeList.length > 0,
+          isQualified: abnormalTypeList.length === 0,
+          abnormalTypes: abnormalTypeList,
+          details: enhancedDetails.map(detail => {
+            if (person.category === "营销大区" && detail.isCrossRegion && abnormalTypeList.includes("跨区域出差超阈值") && !detail.abnormalNote) {
+              return { ...detail, rowAbnormal: true, abnormalNote: "个人跨区域出差率或天数超过阈值" };
+            }
+            if (person.category !== "营销大区" && abnormalTypeList.includes("低于出差下限") && !detail.abnormalNote) {
+              return { ...detail, rowAbnormal: true, abnormalNote: "个人出差率低于阈值下限" };
+            }
+            if (person.category === "营销大区" && detail.isCrossRegion && abnormalTypeList.includes("单一地市/区县占比超阈值") && !detail.abnormalNote) {
+              return { ...detail, rowAbnormal: true, abnormalNote: "单一地市/区县占比超过阈值" };
+            }
+            return detail;
+          })
+        };
+      });
+    }
+
+    evaluatePeople();
+
+    const formulaMap = {
+      totalPeople: "单位综合人数：当前筛选条件下纳入统计的总人数。总览为全部人员，班子页面为班子综合人数，员工页面为员工综合人数。",
+      qualifiedRate: "单位出差达标率 = 达标人数 / 单位综合人数 × 100%。达标人数占当前筛选条件下单位综合人数的比例。",
+      abnormalRate: "单位异常率 = 异常人数 / 单位综合人数 × 100%。异常人数占当前筛选条件下单位综合人数的比例。",
+      avgDays: "人均出差天数 = 出差总天数 / 单位综合人数。用于替代总出差人天进行单位间对比，避免因单位人数不同造成比较失真。",
+      personalRate: "运营/职能部门个人出差率 = 出差天数 / 应考核天数 × 100%；应考核天数 = 应勤天数 - 请假天数 - 扣除天数。",
+      crossRate: "营销大区个人跨区域出差率 = 跨区域出差天数 / 应考核天数 × 100%。目的地不属于所属大区负责范围时计为跨区域出差。",
+      exceptionType: "异常类型包括低于出差下限、未报备跨区域出差、跨区域出差超阈值、单一地市/区县占比超阈值、数据待核验。"
+    };
+
+    const appState = {
+      view: "overview",
+      drillTab: "营销大区",
+      selectedUnit: "",
+      selectedPersonId: "",
+      previousView: "overview",
+      filters: {
+        year: "2026",
+        period: "月度",
+        periodValue: "5月",
+        category: "全部",
+        unit: "全部",
+        level: "全部",
+        personScope: "全部",
+        abnormalStatus: "全部",
+        abnormalType: "全部",
+        keyword: ""
+      }
+    };
+
+    let chartPool = [];
+
+    function pct(value) {
+      return `${((value || 0) * 100).toFixed(1)}%`;
+    }
+
+    function num(value, digits = 1) {
+      return Number(value || 0).toFixed(digits);
+    }
+
+    function unique(values) {
+      return [...new Set(values)];
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.innerHTML = message;
+      toast.classList.add("show");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 2800);
+    }
+
+    function getUnitsByCategory(category) {
+      return unitData.filter(item => category === "全部" || item.category === category).map(item => item.unit);
+    }
+
+    function unitCategory(unit) {
+      const item = unitData.find(row => row.unit === unit);
+      return item ? item.category : "";
+    }
+
+    function renderFilters() {
+      const units = getUnitsByCategory(appState.filters.category);
+      const unitOptions = ["全部", ...units].map(unit => `<option ${appState.filters.unit === unit ? "selected" : ""}>${unit}</option>`).join("");
+      const levelOptions = ["全部", "班子", "员工", ...BOARD_LEVELS, "主管/业务骨干", "普通员工"]
+        .map(level => `<option ${appState.filters.level === level ? "selected" : ""}>${level}</option>`).join("");
+      document.getElementById("filters").innerHTML = `
+        <div class="filter-field">
+          <label>年度</label>
+          <select data-filter="year"><option selected>2026</option></select>
+        </div>
+        <div class="filter-field">
+          <label>周期</label>
+          <select data-filter="period">
+            ${["月度", "季度", "年度"].map(item => `<option ${appState.filters.period === item ? "selected" : ""}>${item}</option>`).join("")}
+          </select>
+        </div>
+        <div class="filter-field">
+          <label>月份或季度</label>
+          <select data-filter="periodValue">
+            ${["1月", "2月", "3月", "4月", "5月", "6月", "一季度", "二季度", "三季度", "四季度", "全年"].map(item => `<option ${appState.filters.periodValue === item ? "selected" : ""}>${item}</option>`).join("")}
+          </select>
+        </div>
+        <div class="filter-field">
+          <label>分类</label>
+          <select data-filter="category">
+            ${["全部", "营销大区", "运营部门", "职能部门"].map(item => `<option ${appState.filters.category === item ? "selected" : ""}>${item}</option>`).join("")}
+          </select>
+        </div>
+        <div class="filter-field">
+          <label>单位</label>
+          <select data-filter="unit">${unitOptions}</select>
+        </div>
+        <div class="filter-field">
+          <label>层级</label>
+          <select data-filter="level">${levelOptions}</select>
+        </div>
+        <div class="filter-field">
+          <label>人员范围</label>
+          <select data-filter="personScope">
+            ${["全部", "班子", "员工"].map(item => `<option ${appState.filters.personScope === item ? "selected" : ""}>${item}</option>`).join("")}
+          </select>
+        </div>
+        <div class="filter-field">
+          <label>异常状态</label>
+          <select data-filter="abnormalStatus">
+            ${["全部", "正常", "异常"].map(item => `<option ${appState.filters.abnormalStatus === item ? "selected" : ""}>${item}</option>`).join("")}
+          </select>
+        </div>
+        <div class="filter-field">
+          <label>异常类型</label>
+          <select data-filter="abnormalType">
+            ${["全部", ...EXCEPTION_TYPES].map(item => `<option ${appState.filters.abnormalType === item ? "selected" : ""}>${item}</option>`).join("")}
+          </select>
+        </div>
+        <div class="filter-field">
+          <label>姓名搜索</label>
+          <input data-filter="keyword" value="${appState.filters.keyword}" placeholder="输入姓名或工号" />
+        </div>
+        <div class="filter-actions">
+          <button class="btn primary" onclick="applyFilter()">查询</button>
+          <button class="btn ghost" onclick="resetFilter()">重置</button>
+          <button class="btn" onclick="showToast('当前为原型，实际系统中导出当前筛选结果。')">导出</button>
+        </div>
+      `;
+
+      document.querySelectorAll("[data-filter]").forEach(el => {
+        el.addEventListener("change", handleFilterChange);
+        el.addEventListener("keyup", event => {
+          if (event.key === "Enter") applyFilter();
+        });
+      });
+    }
+
+    function handleFilterChange(event) {
+      const key = event.target.dataset.filter;
+      appState.filters[key] = event.target.value;
+      if (key === "category") {
+        appState.filters.unit = "全部";
+        renderFilters();
+      }
+      if (key !== "keyword") applyFilter();
+    }
+
+    function applyFilter() {
+      const keywordInput = document.querySelector("[data-filter='keyword']");
+      if (keywordInput) appState.filters.keyword = keywordInput.value.trim();
+      render();
+    }
+
+    function resetFilter() {
+      appState.filters = {
+        year: "2026",
+        period: "月度",
+        periodValue: "5月",
+        category: "全部",
+        unit: "全部",
+        level: "全部",
+        personScope: "全部",
+        abnormalStatus: "全部",
+        abnormalType: "全部",
+        keyword: ""
+      };
+      appState.selectedUnit = "";
+      appState.selectedPersonId = "";
+      renderFilters();
+      render();
+    }
+
+    function filteredPeople(options = {}) {
+      const filters = appState.filters;
+      let rows = [...peopleData];
+      const category = options.category || filters.category;
+      const unit = options.unit !== undefined ? options.unit : filters.unit;
+
+      if (category && category !== "全部") rows = rows.filter(person => person.category === category);
+      if (unit && unit !== "全部") rows = rows.filter(person => person.unit === unit);
+      if (options.scope === "班子") rows = rows.filter(person => person.isLeadership);
+      if (options.scope === "员工") rows = rows.filter(person => !person.isLeadership);
+      if (filters.personScope === "班子") rows = rows.filter(person => person.isLeadership);
+      if (filters.personScope === "员工") rows = rows.filter(person => !person.isLeadership);
+      if (filters.level !== "全部") {
+        if (filters.level === "班子") rows = rows.filter(person => person.isLeadership);
+        else if (filters.level === "员工") rows = rows.filter(person => !person.isLeadership);
+        else rows = rows.filter(person => person.level === filters.level);
+      }
+      if (filters.abnormalStatus === "正常") rows = rows.filter(person => !person.isAbnormal);
+      if (filters.abnormalStatus === "异常") rows = rows.filter(person => person.isAbnormal);
+      if (filters.abnormalType !== "全部") rows = rows.filter(person => person.abnormalTypes.includes(filters.abnormalType));
+      if (filters.keyword) {
+        const keyword = filters.keyword.toLowerCase();
+        rows = rows.filter(person => person.name.toLowerCase().includes(keyword) || person.employeeNo.toLowerCase().includes(keyword));
+      }
+      return rows;
+    }
+
+    // =============================
+    // 指标计算位置：所有 KPI、图表、表格共用聚合函数
+    // =============================
+    function aggregate(rows) {
+      const total = rows.length;
+      const abnormal = rows.filter(person => person.isAbnormal).length;
+      const qualified = total - abnormal;
+      const businessDays = rows.reduce((sum, person) => sum + person.businessDays, 0);
+      const crossRegionDays = rows.reduce((sum, person) => sum + person.crossRegionDays, 0);
+      const crossPeople = rows.filter(person => person.crossRegionDays > 0).length;
+      const unreportedPeople = rows.filter(person => person.abnormalTypes.includes("未报备跨区域出差")).length;
+      const crossOverPeople = rows.filter(person => person.abnormalTypes.includes("跨区域出差超阈值")).length;
+      const lowPeople = rows.filter(person => person.abnormalTypes.includes("低于出差下限")).length;
+      const avgTravelRate = total ? rows.reduce((sum, person) => sum + person.travelRate, 0) / total : 0;
+      const avgCrossRate = total ? rows.reduce((sum, person) => sum + person.crossRegionRate, 0) / total : 0;
+      return {
+        total,
+        abnormal,
+        qualified,
+        businessDays,
+        crossRegionDays,
+        crossPeople,
+        unreportedPeople,
+        crossOverPeople,
+        lowPeople,
+        qualifiedRate: total ? qualified / total : 0,
+        abnormalRate: total ? abnormal / total : 0,
+        avgDays: total ? businessDays / total : 0,
+        avgCrossDays: total ? crossRegionDays / total : 0,
+        crossPeopleRate: total ? crossPeople / total : 0,
+        avgTravelRate,
+        avgCrossRate
+      };
+    }
+
+    function groupByCategory(rows) {
+      return ["营销大区", "运营部门", "职能部门"].map(category => {
+        const categoryRows = rows.filter(person => person.category === category);
+        return { name: category, ...aggregate(categoryRows) };
+      });
+    }
+
+    function groupByUnit(rows, category) {
+      return getUnitsByCategory(category).map(unit => {
+        const unitRows = rows.filter(person => person.unit === unit);
+        return { unit, category: unitCategory(unit), ...aggregate(unitRows) };
+      });
+    }
+
+    function exceptionDistribution(rows) {
+      const counts = {};
+      EXCEPTION_TYPES.forEach(type => counts[type] = 0);
+      rows.forEach(person => person.abnormalTypes.forEach(type => counts[type] = (counts[type] || 0) + 1));
+      return Object.entries(counts).filter(([, value]) => value > 0).map(([name, value]) => ({ name, value }));
+    }
+
+    function destinationStats(rows, mode = "business") {
+      const map = {};
+      rows.forEach(person => {
+        person.details.forEach(detail => {
+          const include = mode === "cross" ? detail.isCrossRegion && detail.days > 0 : detail.counted && detail.days > 0;
+          if (!include) return;
+          const key = detail.city || "待核验地市";
+          map[key] = (map[key] || 0) + Number(detail.days || 0);
+        });
+      });
+      return Object.entries(map)
+        .map(([name, value]) => ({ name, value: Number(value.toFixed(1)) }))
+        .sort((a, b) => b.value - a.value);
+    }
+
+    function table(htmlRows, minWidth = 1020) {
+      return `
+        <div class="table-wrap">
+          <table style="min-width:${minWidth}px">${htmlRows}</table>
+          <div class="pager">
+            <span>共 ${Math.max(0, (htmlRows.match(/<tr/g) || []).length - 1)} 条，当前显示第 1 页</span>
+            <div class="pager-controls">
+              <button class="pager-btn">上一页</button>
+              <button class="pager-btn">1</button>
+              <button class="pager-btn">下一页</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function statusTag(person) {
+      return person.isAbnormal ? `<span class="tag danger">异常</span>` : `<span class="tag green">正常</span>`;
+    }
+
+    function abnormalText(person) {
+      return person.abnormalTypes.length ? person.abnormalTypes.join("、") : "无";
+    }
+
+    function metricCard(name, value, sub, formulaKey, tone = "") {
+      return `
+        <div class="kpi-card">
+          <div class="kpi-name">
+            <span>${name}</span>
+            <span class="info" onclick="showToast('${formulaMap[formulaKey]}')">i</span>
+            <div class="formula-tip">${formulaMap[formulaKey]}</div>
+          </div>
+          <div class="kpi-value ${tone}">${value}</div>
+          <div class="kpi-sub">${sub}</div>
+        </div>
+      `;
+    }
+
+    function pageHead(title, desc = "", right = "") {
+      return `
+        <div class="page-head">
+          <div>
+            <h2>${title}</h2>
+            ${desc ? `<p class="page-desc">${desc}</p>` : ""}
+          </div>
+          <div class="page-tools">${right}</div>
+        </div>
+      `;
+    }
+
+    function initChart(id, option, clickHandler) {
+      const node = document.getElementById(id);
+      if (!node) return;
+      if (!window.echarts) {
+        node.innerHTML = "<div class='empty'>ECharts CDN 未加载，图表区域保留。</div>";
+        return;
+      }
+      const chart = echarts.init(node);
+      chart.setOption(option);
+      if (clickHandler) chart.on("click", clickHandler);
+      chartPool.push(chart);
+    }
+
+    function disposeCharts() {
+      chartPool.forEach(chart => chart.dispose());
+      chartPool = [];
+    }
+
+    function barOption(names, values, threshold, unitLabel = "%") {
+      return {
+        grid: { left: 110, right: 38, top: 28, bottom: 32 },
+        tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+        xAxis: {
+          type: "value",
+          max: value => Math.max(100, Math.ceil(value.max / 10) * 10),
+          axisLabel: { formatter: `{value}${unitLabel}` },
+          splitLine: { lineStyle: { color: "#e7eef8" } }
+        },
+        yAxis: {
+          type: "category",
+          data: names,
+          axisLine: { show: false },
+          axisTick: { show: false }
+        },
+        series: [{
+          type: "bar",
+          barWidth: 16,
+          data: values,
+          itemStyle: { color: "#2f80ed", borderRadius: [0, 5, 5, 0] },
+          label: { show: true, position: "right", formatter: `{c}${unitLabel}` },
+          markLine: threshold === undefined ? undefined : {
+            symbol: "none",
+            label: { formatter: `阈值 ${threshold}${unitLabel}`, color: "#b76b00" },
+            lineStyle: { color: "#f59e0b", type: "dashed", width: 2 },
+            data: [{ xAxis: threshold }]
+          }
+        }]
+      };
+    }
+
+    function pieOption(data) {
+      return {
+        tooltip: { trigger: "item", formatter: "{b}<br/>人数：{c}<br/>占比：{d}%" },
+        legend: { bottom: 0, type: "scroll" },
+        series: [{
+          type: "pie",
+          radius: ["48%", "70%"],
+          center: ["50%", "43%"],
+          avoidLabelOverlap: true,
+          data: data.length ? data : [{ name: "暂无异常", value: 1, itemStyle: { color: "#d9e6f5" } }],
+          label: { formatter: "{b}\n{d}%" }
+        }]
+      };
+    }
+
+    function topOption(data, color = "#2f80ed") {
+      const list = data.slice(0, 10).reverse();
+      return {
+        grid: { left: 96, right: 35, top: 20, bottom: 28 },
+        tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+        xAxis: { type: "value", splitLine: { lineStyle: { color: "#e7eef8" } } },
+        yAxis: { type: "category", data: list.map(item => item.name), axisLine: { show: false }, axisTick: { show: false } },
+        series: [{ type: "bar", barWidth: 15, data: list.map(item => item.value), itemStyle: { color, borderRadius: [0, 5, 5, 0] }, label: { show: true, position: "right" } }]
+      };
+    }
+
+    function heatOption(rows) {
+      const cities = unique(destinationStats(rows, "business").slice(0, 8).map(item => item.name));
+      const categories = unique(rows.map(person => person.category));
+      const data = [];
+      categories.forEach((category, y) => {
+        cities.forEach((city, x) => {
+          const value = rows.filter(person => person.category === category).reduce((sum, person) => {
+            return sum + person.details.filter(detail => detail.city === city && detail.counted).reduce((s, detail) => s + detail.days, 0);
+          }, 0);
+          data.push([x, y, value]);
+        });
+      });
+      return {
+        grid: { left: 78, right: 36, top: 35, bottom: 48 },
+        tooltip: { position: "top", formatter: params => `${categories[params.value[1]]} - ${cities[params.value[0]]}<br/>出差天数：${params.value[2]}` },
+        xAxis: { type: "category", data: cities, axisLabel: { interval: 0, rotate: 28 } },
+        yAxis: { type: "category", data: categories },
+        visualMap: { min: 0, max: Math.max(4, ...data.map(item => item[2])), calculable: true, orient: "horizontal", left: "center", bottom: 0, inRange: { color: ["#eaf3ff", "#2f80ed", "#0f2f63"] } },
+        series: [{ type: "heatmap", data, label: { show: true }, emphasis: { itemStyle: { borderColor: "#333", borderWidth: 1 } } }]
+      };
+    }
+
+    // =============================
+    // 下钻交互位置：导航、图表点击、表格点击统一走这些函数
+    // =============================
+    function navigateTo(view, context = {}) {
+      appState.previousView = appState.view;
+      appState.view = view;
+      if (context.category) appState.drillTab = context.category;
+      if (context.unit !== undefined) appState.selectedUnit = context.unit;
+      if (context.personId) appState.selectedPersonId = context.personId;
+      if (view === "board" || view === "employee") {
+        if (context.unit) {
+          appState.filters.unit = context.unit;
+          appState.filters.category = unitCategory(context.unit) || appState.filters.category;
+        }
+      }
+      if (view === "person" && !appState.selectedPersonId) {
+        const first = filteredPeople()[0] || peopleData[0];
+        appState.selectedPersonId = first.id;
+      }
+      renderFilters();
+      render();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function goUnitDrill(category) {
+      navigateTo("unit", { category });
+    }
+
+    function goUnitPeople(unit, scope) {
+      navigateTo(scope === "班子" ? "board" : "employee", { unit });
+    }
+
+    function goPerson(personId) {
+      navigateTo("person", { personId });
+    }
+
+    function backToPrevious() {
+      navigateTo(appState.previousView || "overview");
+    }
+
+    function updateNavAndPath() {
+      document.querySelectorAll(".nav-item").forEach(item => {
+        item.classList.toggle("active", item.dataset.view === appState.view);
+      });
+      const pathParts = ["总览"];
+      if (appState.view === "unit") pathParts.push(appState.drillTab || "分类/单位");
+      if (appState.selectedUnit) pathParts.push(appState.selectedUnit);
+      if (appState.view === "board") pathParts.push("班子页面");
+      if (appState.view === "employee") pathParts.push("员工页面");
+      if (appState.view === "person") {
+        const person = peopleData.find(item => item.id === appState.selectedPersonId);
+        pathParts.push("个人明细");
+        if (person) pathParts.push(person.name);
+        pathParts.push("每日出差明细");
+      }
+      document.getElementById("breadcrumbText").innerHTML = pathParts.map((item, index) => index === pathParts.length - 1 ? `<span class="breadcrumb-current">${item}</span>` : item).join(" → ");
+      document.getElementById("topStateText").textContent = pathParts.join(" / ");
+    }
+
+    function renderOverview() {
+      const rows = filteredPeople();
+      const stats = aggregate(rows);
+      const categoryRows = groupByCategory(rows);
+      const marketingRows = rows.filter(person => person.category === "营销大区");
+      const operateRows = rows.filter(person => person.category !== "营销大区");
+      const opStats = aggregate(rows.filter(person => person.category === "运营部门"));
+      const funcStats = aggregate(rows.filter(person => person.category === "职能部门"));
+      const abnormalRows = rows.filter(person => person.isAbnormal);
+
+      const abnormalTable = table(`
+        <thead><tr>
+          <th>序号</th><th>姓名</th><th>单位</th><th>分类</th><th>层级</th><th>异常类型</th><th>出差率或跨区域出差率</th><th>阈值</th><th>异常说明</th><th>操作</th>
+        </tr></thead>
+        <tbody>
+          ${abnormalRows.map((person, index) => `
+            <tr class="abnormal">
+              <td>${index + 1}</td>
+              <td>${person.name}</td>
+              <td>${person.unit}</td>
+              <td>${person.category}</td>
+              <td>${person.level}</td>
+              <td>${abnormalText(person)}</td>
+              <td>${person.category === "营销大区" ? pct(person.crossRegionRate) : pct(person.travelRate)}</td>
+              <td>${person.threshold}</td>
+              <td>${abnormalText(person)}</td>
+              <td><button class="link" onclick="goPerson('${person.id}')">查看明细</button></td>
+            </tr>
+          `).join("")}
+        </tbody>
+      `, 1280);
+
+      document.getElementById("content").innerHTML = `
+        ${pageHead("出差考勤管控驾驶舱（总览）", "展示总体达标、异常、单位分类对比与异常人员追溯；所有图表和清单均可继续下钻。")}
+        <div class="kpi-grid">
+          ${metricCard("总体达标率", pct(stats.qualifiedRate), "达标人数 / 综合人数", "qualifiedRate")}
+          ${metricCard("总体异常率", pct(stats.abnormalRate), "异常人数 / 综合人数", "abnormalRate", stats.abnormalRate > 0.2 ? "danger" : "")}
+          ${metricCard("人均出差天数", num(stats.avgDays), "出差总天数 / 综合人数", "avgDays")}
+          ${metricCard("营销大区跨区域出差率", pct(aggregate(marketingRows).avgCrossRate), "仅统计跨出所属区域的出差", "crossRate")}
+          ${metricCard("运营部门达标率", pct(opStats.qualifiedRate), "运营部门达标人数 / 综合人数", "qualifiedRate")}
+          ${metricCard("职能部门达标率", pct(funcStats.qualifiedRate), "职能部门达标人数 / 综合人数", "qualifiedRate")}
+          ${metricCard("异常人员数", stats.abnormal, "存在任一异常类型的人数", "exceptionType", "danger")}
+        </div>
+
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-head">
+              <h3 class="panel-title">三类单位达标率对比</h3>
+              <span class="panel-note">点击柱形进入对应分类下钻；口径为达标人数 / 单位综合人数</span>
+            </div>
+            <div id="overviewCategoryChart" class="chart"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head">
+              <h3 class="panel-title">异常类型分布</h3>
+              <span class="panel-note">按异常人员类型计数</span>
+            </div>
+            <div id="overviewPieChart" class="chart"></div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-head">
+              <h3 class="panel-title">营销大区跨区域出差去向 Top10</h3>
+              <span class="panel-note">只展示跨出所属区域后的目的地</span>
+            </div>
+            <div id="overviewCrossDestChart" class="chart"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head">
+              <h3 class="panel-title">运营/职能部门出差目的地热力图</h3>
+              <span class="panel-note">用于查看主要出差目的地，不展示营销本区域市场活动</span>
+            </div>
+            <div id="overviewHeatChart" class="chart"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3 class="panel-title">异常人员追溯清单</h3>
+            <span class="panel-note">点击“查看明细”进入个人每日出差明细</span>
+          </div>
+          ${abnormalTable}
+        </div>
+
+        ${renderFlowPanel()}
+        ${renderExplainPanel()}
+      `;
+
+      setTimeout(() => {
+        initChart("overviewCategoryChart", barOption(categoryRows.map(item => item.name), categoryRows.map(item => Number((item.qualifiedRate * 100).toFixed(1))), 80), params => goUnitDrill(params.name));
+        initChart("overviewPieChart", pieOption(exceptionDistribution(rows)));
+        initChart("overviewCrossDestChart", topOption(destinationStats(marketingRows, "cross"), "#1e5aa8"));
+        initChart("overviewHeatChart", heatOption(operateRows));
+      });
+    }
+
+    function renderUnitDrill() {
+      const category = appState.drillTab || "营销大区";
+      const rows = filteredPeople({ category, unit: "全部" });
+      const stats = aggregate(rows);
+      const unitRows = groupByUnit(rows, category);
+      const isMarketing = category === "营销大区";
+      const thresholdLine = isMarketing ? 82 : (category === "运营部门" ? 88 : 92);
+      const title = isMarketing ? "营销大区跨区域出差情况" : `${category}出差情况`;
+
+      const unitTable = table(`
+        <thead><tr>
+          <th>单位</th><th>单位综合人数</th><th>达标人数</th><th>达标率</th><th>异常人数</th><th>异常率</th><th>${isMarketing ? "跨区域出差人数" : "未达标人数"}</th><th>${isMarketing ? "跨区域出差天数" : "人均出差天数"}</th><th>${isMarketing ? "未报备人数" : "平均出差率"}</th><th>操作</th>
+        </tr></thead>
+        <tbody>
+          ${unitRows.map(row => `
+            <tr class="${row.abnormal ? "abnormal" : ""}">
+              <td>${row.unit}</td>
+              <td>${row.total}</td>
+              <td>${row.qualified}</td>
+              <td>${pct(row.qualifiedRate)}</td>
+              <td>${row.abnormal}</td>
+              <td>${pct(row.abnormalRate)}</td>
+              <td>${isMarketing ? row.crossPeople : row.lowPeople}</td>
+              <td>${isMarketing ? num(row.crossRegionDays) : num(row.avgDays)}</td>
+              <td>${isMarketing ? row.unreportedPeople : pct(row.avgTravelRate)}</td>
+              <td>
+                <button class="link" onclick="goUnitPeople('${row.unit}', '班子')">查看班子</button>
+                <button class="link" onclick="goUnitPeople('${row.unit}', '员工')">查看员工</button>
+              </td>
+            </tr>
+          `).join("")}
+        </tbody>
+      `, 1250);
+
+      const unreportedList = rows.filter(person => person.abnormalTypes.includes("未报备跨区域出差"));
+      const listPanel = isMarketing ? `
+        <div class="panel">
+          <div class="panel-head"><h3 class="panel-title">未报备跨区域出差清单</h3><span class="panel-note">营销大区专属异常</span></div>
+          ${renderPersonSimpleTable(unreportedList, "cross")}
+        </div>
+      ` : `
+        <div class="panel">
+          <div class="panel-head"><h3 class="panel-title">部门出差率排行</h3><span class="panel-note">按个人平均出差率排序</span></div>
+          <div id="unitRankChart" class="chart"></div>
+        </div>
+      `;
+
+      document.getElementById("content").innerHTML = `
+        ${pageHead("出差考勤管控驾驶舱（单位下钻）", "按营销大区、运营部门、职能部门三类口径分别查看单位达标、异常和明细。")}
+        <div class="tabs">
+          ${["营销大区", "运营部门", "职能部门"].map(tab => `<button class="tab-btn ${category === tab ? "active" : ""}" onclick="appState.drillTab='${tab}'; render();">${tab}</button>`).join("")}
+        </div>
+        <div class="kpi-grid compact">
+          ${isMarketing
+            ? `
+              ${metricCard("跨区域出差人数", stats.crossPeople, "存在跨区域出差的人数", "crossRate")}
+              ${metricCard("跨区域出差率", pct(stats.avgCrossRate), "跨区域出差天数 / 应考核天数", "crossRate")}
+              ${metricCard("跨区域异常率", pct(stats.abnormalRate), "跨区域异常人数 / 综合人数", "abnormalRate", stats.abnormalRate > 0.2 ? "danger" : "")}
+              ${metricCard("未报备人数", stats.unreportedPeople, "跨区域出差无报备记录", "exceptionType", "danger")}
+              ${metricCard("人均跨区域出差天数", num(stats.avgCrossDays), "跨区域出差天数 / 综合人数", "avgDays")}
+            `
+            : `
+              ${metricCard(`${category}综合人数`, stats.total, "当前筛选条件下综合人数", "totalPeople")}
+              ${metricCard("达标率", pct(stats.qualifiedRate), "达标人数 / 综合人数", "qualifiedRate")}
+              ${metricCard("异常率", pct(stats.abnormalRate), "异常人数 / 综合人数", "abnormalRate", stats.abnormalRate > 0.2 ? "danger" : "")}
+              ${metricCard("未达标人数", stats.lowPeople, "低于出差下限人数", "exceptionType", "danger")}
+              ${metricCard("人均出差天数", num(stats.avgDays), "出差总天数 / 综合人数", "avgDays")}
+            `
+          }
+        </div>
+
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-head">
+              <h3 class="panel-title">${isMarketing ? "各营销大区跨区域出差达标率对比" : `各${category}达标率对比`}</h3>
+              <span class="panel-note">带阈值线；点击单位可查看班子/员工</span>
+            </div>
+            <div id="unitCompareChart" class="chart"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head">
+              <h3 class="panel-title">${isMarketing ? "跨区域目的地 Top10" : "出差目的地城市排行"}</h3>
+              <span class="panel-note">${isMarketing ? "仅跨区域目的地" : "运营/职能正常出差目的地"}</span>
+            </div>
+            <div id="unitDestChart" class="chart"></div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          ${listPanel}
+          <div class="panel">
+            <div class="panel-head"><h3 class="panel-title">异常类型分布</h3><span class="panel-note">当前分类口径</span></div>
+            <div id="unitPieChart" class="chart"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h3 class="panel-title">单位明细表</h3><span class="panel-note">${title}</span></div>
+          ${unitTable}
+        </div>
+      `;
+
+      setTimeout(() => {
+        initChart("unitCompareChart", barOption(unitRows.map(item => item.unit), unitRows.map(item => Number((item.qualifiedRate * 100).toFixed(1))), thresholdLine), params => {
+          if (params.name) goUnitPeople(params.name, "员工");
+        });
+        initChart("unitDestChart", topOption(destinationStats(rows, isMarketing ? "cross" : "business"), isMarketing ? "#1e5aa8" : "#2f80ed"));
+        initChart("unitPieChart", pieOption(exceptionDistribution(rows)));
+        if (!isMarketing) {
+          const rateData = rows.map(person => ({ name: person.name, value: Number((person.travelRate * 100).toFixed(1)) })).sort((a, b) => b.value - a.value);
+          initChart("unitRankChart", topOption(rateData, "#10a36a"));
+        }
+      });
+    }
+
+    function renderBoardOrEmployee(scope) {
+      const isBoard = scope === "班子";
+      const selectedUnit = appState.selectedUnit || (appState.filters.unit !== "全部" ? appState.filters.unit : "");
+      const rows = filteredPeople({ unit: selectedUnit || "全部", scope });
+      const stats = aggregate(rows);
+      const title = isBoard ? "单位班子出差情况" : "单位员工出差情况";
+      const unitRows = groupByUnit(rows, appState.filters.category === "全部" ? unitCategory(selectedUnit) || "全部" : appState.filters.category)
+        .filter(row => !selectedUnit || row.unit === selectedUnit || appState.filters.category === "全部");
+      const unitNames = unitRows.length ? unitRows.map(row => row.unit) : unique(rows.map(person => person.unit));
+
+      const detailTable = table(`
+        <thead><tr>
+          <th>单位</th><th>姓名</th>${isBoard ? "<th>层级</th>" : ""}<th>岗位</th><th>应考核天数</th><th>出差天数或跨区域出差天数</th><th>出差率或跨区域出差率</th><th>阈值</th><th>是否异常</th><th>异常类型</th><th>操作</th>
+        </tr></thead>
+        <tbody>
+          ${rows.map(person => `
+            <tr class="${person.isAbnormal ? "abnormal" : ""}">
+              <td>${person.unit}</td>
+              <td>${person.name}</td>
+              ${isBoard ? `<td>${person.level}</td>` : ""}
+              <td>${person.position}</td>
+              <td>${person.assessDays}</td>
+              <td>${person.category === "营销大区" ? num(person.crossRegionDays) : num(person.businessDays)}</td>
+              <td>${person.category === "营销大区" ? pct(person.crossRegionRate) : pct(person.travelRate)}</td>
+              <td>${person.threshold}</td>
+              <td>${statusTag(person)}</td>
+              <td>${abnormalText(person)}</td>
+              <td><button class="link" onclick="goPerson('${person.id}')">查看个人明细</button></td>
+            </tr>
+          `).join("")}
+        </tbody>
+      `, isBoard ? 1280 : 1180);
+
+      const abnormalList = rows.filter(person => person.isAbnormal);
+
+      document.getElementById("content").innerHTML = `
+        ${pageHead(title, `${selectedUnit || "全部单位"} · 统计范围：${isBoard ? "仅四类班子层级" : "除班子人员之外的其他员工"}`, `<button class="btn ghost" onclick="navigateTo('unit')">返回单位下钻</button>`)}
+        <div class="kpi-grid compact">
+          ${metricCard(`${isBoard ? "班子" : "员工"}综合人数`, stats.total, "当前页面纳入统计人数", "totalPeople")}
+          ${metricCard(`${isBoard ? "班子" : "员工"}达标率`, pct(stats.qualifiedRate), "达标人数 / 综合人数", "qualifiedRate")}
+          ${metricCard(`${isBoard ? "班子" : "员工"}异常率`, pct(stats.abnormalRate), "异常人数 / 综合人数", "abnormalRate", stats.abnormalRate > 0.2 ? "danger" : "")}
+          ${metricCard(`${isBoard ? "班子" : "员工"}人均出差天数`, num(stats.avgDays), "出差总天数 / 综合人数", "avgDays")}
+          ${metricCard(`${isBoard ? "班子" : "员工"}异常人数`, stats.abnormal, "存在任一异常类型的人数", "exceptionType", "danger")}
+        </div>
+
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-head"><h3 class="panel-title">${isBoard ? "班子" : "员工"}达标率对比图</h3><span class="panel-note">横向条形图，带阈值线</span></div>
+            <div id="scopeCompareChart" class="chart"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3 class="panel-title">${isBoard ? "班子" : "员工"}异常类型分布图</h3><span class="panel-note">饼图/环形图</span></div>
+            <div id="scopePieChart" class="chart"></div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-head"><h3 class="panel-title">${isBoard ? "班子月度异常矩阵" : "员工出差率分布图"}</h3><span class="panel-note">${isBoard ? "单位 × 月份，颜色表示异常人数" : "按出差率区间统计人数"}</span></div>
+            <div id="scopeMatrixChart" class="chart"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3 class="panel-title">${isBoard ? "班子成员排行" : "异常员工清单"}</h3><span class="panel-note">点击表格可下钻个人</span></div>
+            ${isBoard ? `<div id="scopeRankChart" class="chart"></div>` : renderPersonSimpleTable(abnormalList, "business")}
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h3 class="panel-title">${isBoard ? "班子成员明细表" : "员工明细表"}</h3><span class="panel-note">默认员工页面不包含班子人员</span></div>
+          ${detailTable}
+        </div>
+      `;
+
+      setTimeout(() => {
+        const compareRows = selectedUnit ? [{ unit: selectedUnit, ...aggregate(rows) }] : groupByUnit(rows, appState.filters.category === "全部" ? "全部" : appState.filters.category);
+        initChart("scopeCompareChart", barOption(compareRows.map(item => item.unit), compareRows.map(item => Number((item.qualifiedRate * 100).toFixed(1))), 85));
+        initChart("scopePieChart", pieOption(exceptionDistribution(rows)));
+        if (isBoard) {
+          initChart("scopeMatrixChart", matrixOption(unitNames, rows));
+          const rank = rows.map(person => ({ name: `${person.name}（${person.unit}）`, value: Number(((person.category === "营销大区" ? person.crossRegionRate : person.travelRate) * 100).toFixed(1)) })).sort((a, b) => b.value - a.value);
+          initChart("scopeRankChart", topOption(rank, "#1e5aa8"));
+        } else {
+          initChart("scopeMatrixChart", distributionOption(rows));
+        }
+      });
+    }
+
+    function matrixOption(units, rows) {
+      const months = ["1月", "2月", "3月", "4月", "5月", "6月"];
+      const data = [];
+      units.forEach((unit, y) => {
+        months.forEach((month, x) => {
+          const base = rows.filter(person => person.unit === unit && person.isAbnormal).length;
+          const value = month === "5月" ? base : Math.max(0, base - ((x + y) % 2));
+          data.push([x, y, value]);
+        });
+      });
+      return {
+        grid: { left: 100, right: 30, top: 36, bottom: 44 },
+        tooltip: { formatter: params => `${units[params.value[1]]} ${months[params.value[0]]}<br/>异常人数：${params.value[2]}` },
+        xAxis: { type: "category", data: months },
+        yAxis: { type: "category", data: units },
+        visualMap: { min: 0, max: Math.max(3, ...data.map(item => item[2])), calculable: true, left: "center", bottom: 0, orient: "horizontal", inRange: { color: ["#eaf3ff", "#ffd7d2", "#d93025"] } },
+        series: [{ type: "heatmap", data, label: { show: true } }]
+      };
+    }
+
+    function distributionOption(rows) {
+      const bins = [
+        { name: "0-5%", min: 0, max: 0.05, value: 0 },
+        { name: "5-10%", min: 0.05, max: 0.1, value: 0 },
+        { name: "10-20%", min: 0.1, max: 0.2, value: 0 },
+        { name: "20%以上", min: 0.2, max: Infinity, value: 0 }
+      ];
+      rows.forEach(person => {
+        const rate = person.category === "营销大区" ? person.crossRegionRate : person.travelRate;
+        const bin = bins.find(item => rate >= item.min && rate < item.max) || bins[bins.length - 1];
+        bin.value += 1;
+      });
+      return {
+        grid: { left: 46, right: 24, top: 28, bottom: 36 },
+        tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+        xAxis: { type: "category", data: bins.map(item => item.name) },
+        yAxis: { type: "value", minInterval: 1, splitLine: { lineStyle: { color: "#e7eef8" } } },
+        series: [{ type: "bar", barWidth: 30, data: bins.map(item => item.value), itemStyle: { color: "#2f80ed", borderRadius: [5, 5, 0, 0] }, label: { show: true, position: "top" } }]
+      };
+    }
+
+    function renderPersonSimpleTable(rows, mode) {
+      return table(`
+        <thead><tr><th>姓名</th><th>单位</th><th>分类</th><th>层级</th><th>${mode === "cross" ? "跨区域出差率" : "出差率"}</th><th>异常类型</th><th>操作</th></tr></thead>
+        <tbody>
+          ${rows.map(person => `
+            <tr class="${person.isAbnormal ? "abnormal" : ""}">
+              <td>${person.name}</td>
+              <td>${person.unit}</td>
+              <td>${person.category}</td>
+              <td>${person.level}</td>
+              <td>${mode === "cross" ? pct(person.crossRegionRate) : pct(person.travelRate)}</td>
+              <td>${abnormalText(person)}</td>
+              <td><button class="link" onclick="goPerson('${person.id}')">查看明细</button></td>
+            </tr>
+          `).join("")}
+        </tbody>
+      `, 860);
+    }
+
+    function renderPersonDetail() {
+      let person = peopleData.find(item => item.id === appState.selectedPersonId);
+      if (!person) person = filteredPeople()[0] || peopleData[0];
+      appState.selectedPersonId = person.id;
+      const isMarketing = person.category === "营销大区";
+      const destinations = destinationStats([person], isMarketing ? "cross" : "business");
+      const rateValue = Number(((isMarketing ? person.crossRegionRate : person.travelRate) * 100).toFixed(1));
+      const thresholdValue = isMarketing ? Number((person.thresholdConfig.upperRate * 100).toFixed(1)) : Number((person.thresholdConfig.lowerRate * 100).toFixed(1));
+
+      const detailsTable = table(`
+        <thead><tr>
+          ${isMarketing
+            ? "<th>日期</th><th>出差省份</th><th>出差城市/区县</th><th>是否跨区域</th><th>跨区域出差天数</th><th>是否报备</th><th>占比</th><th>是否异常</th><th>异常说明</th>"
+            : "<th>日期</th><th>出差省份</th><th>出差城市</th><th>出差天数</th><th>是否计入</th><th>出差率贡献</th><th>是否异常</th><th>异常说明</th>"
+          }
+        </tr></thead>
+        <tbody>
+          ${person.details.map(detail => {
+            const contribution = person.assessDays ? detail.days / person.assessDays : 0;
+            const crossShare = person.crossRegionDays ? detail.days / person.crossRegionDays : 0;
+            return isMarketing ? `
+              <tr class="${detail.rowAbnormal ? "abnormal" : ""}">
+                <td>${detail.date}</td>
+                <td>${detail.province || "待核验"}</td>
+                <td>${detail.city}</td>
+                <td>${detail.isCrossRegion ? "是" : "否"}</td>
+                <td>${detail.isCrossRegion ? num(detail.days) : "0.0"}</td>
+                <td>${detail.reported ? "已报备" : "未报备"}</td>
+                <td>${detail.isCrossRegion ? pct(crossShare) : "-"}</td>
+                <td>${detail.rowAbnormal ? `<span class="tag danger">异常</span>` : `<span class="tag green">正常</span>`}</td>
+                <td>${detail.abnormalNote || "无"}</td>
+              </tr>
+            ` : `
+              <tr class="${detail.rowAbnormal ? "abnormal" : ""}">
+                <td>${detail.date}</td>
+                <td>${detail.province || "待核验"}</td>
+                <td>${detail.city}</td>
+                <td>${num(detail.days)}</td>
+                <td>${detail.counted ? "是" : "否"}</td>
+                <td>${pct(contribution)}</td>
+                <td>${detail.rowAbnormal ? `<span class="tag danger">异常</span>` : `<span class="tag green">正常</span>`}</td>
+                <td>${detail.abnormalNote || "无"}</td>
+              </tr>
+            `;
+          }).join("")}
+        </tbody>
+      `, isMarketing ? 1160 : 1060);
+
+      document.getElementById("content").innerHTML = `
+        ${pageHead("个人出差明细", `${person.name} · ${person.unit} · ${isMarketing ? "营销大区跨区域口径" : "运营/职能出差率口径"}`, `<button class="btn ghost" onclick="backToPrevious()">返回上级</button>`)}
+        <div class="panel">
+          <div class="panel-head"><h3 class="panel-title">个人指标概览</h3><span class="panel-note">根据人员所属分类动态展示口径</span></div>
+          <div class="summary-grid">
+            <div class="summary-item"><div class="summary-label">单位</div><div class="summary-value">${person.unit}</div></div>
+            <div class="summary-item"><div class="summary-label">姓名 / 工号</div><div class="summary-value">${person.name} / ${person.employeeNo}</div></div>
+            <div class="summary-item"><div class="summary-label">岗位 / 层级</div><div class="summary-value">${person.position} / ${person.level}</div></div>
+            <div class="summary-item"><div class="summary-label">应勤 / 请假 / 扣除 / 应考核</div><div class="summary-value">${person.workDays} / ${person.leaveDays} / ${person.deductDays} / ${person.assessDays}</div></div>
+            <div class="summary-item"><div class="summary-label">${isMarketing ? "跨区域出差天数" : "出差天数"}</div><div class="summary-value">${isMarketing ? num(person.crossRegionDays) : num(person.businessDays)}</div></div>
+            <div class="summary-item"><div class="summary-label">${isMarketing ? "跨区域出差率" : "个人出差率"}</div><div class="summary-value">${isMarketing ? pct(person.crossRegionRate) : pct(person.travelRate)}</div></div>
+            <div class="summary-item"><div class="summary-label">阈值</div><div class="summary-value">${person.threshold}</div></div>
+            <div class="summary-item"><div class="summary-label">${isMarketing ? "报备状态 / 是否异常" : "是否达标 / 异常类型"}</div><div class="summary-value">${isMarketing ? `${person.details.some(d => d.isCrossRegion && !d.reported) ? "存在未报备" : "均已报备"} / ${person.isAbnormal ? "异常" : "正常"}` : `${person.isQualified ? "达标" : "未达标"} / ${abnormalText(person)}`}</div></div>
+          </div>
+        </div>
+
+        <div class="grid-3">
+          <div class="panel">
+            <div class="panel-head"><h3 class="panel-title">${isMarketing ? "跨区域出差率 vs 阈值" : "个人出差率 vs 阈值"}</h3><span class="panel-note">条形图</span></div>
+            <div id="personRateChart" class="chart short"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3 class="panel-title">${isMarketing ? "跨区域目的地占比" : "出差目的地占比"}</h3><span class="panel-note">按天数统计</span></div>
+            <div id="personPieChart" class="chart short"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3 class="panel-title">${isMarketing ? "区域外目的地分布" : "出差城市分布"}</h3><span class="panel-note">城市排行</span></div>
+            <div id="personCityChart" class="chart short"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h3 class="panel-title">每日明细表</h3><span class="panel-note">正常与异常记录同时展示，异常行浅红高亮</span></div>
+          ${detailsTable}
+        </div>
+      `;
+
+      setTimeout(() => {
+        initChart("personRateChart", {
+          grid: { left: 80, right: 30, top: 28, bottom: 28 },
+          tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+          xAxis: { type: "value", axisLabel: { formatter: "{value}%" }, splitLine: { lineStyle: { color: "#e7eef8" } } },
+          yAxis: { type: "category", data: [person.name], axisTick: { show: false } },
+          series: [{
+            type: "bar",
+            data: [rateValue],
+            barWidth: 24,
+            itemStyle: { color: isMarketing && rateValue > thresholdValue ? "#d93025" : "#2f80ed", borderRadius: [0, 5, 5, 0] },
+            label: { show: true, position: "right", formatter: "{c}%" },
+            markLine: { symbol: "none", lineStyle: { color: "#f59e0b", type: "dashed", width: 2 }, label: { formatter: `阈值 ${thresholdValue}%` }, data: [{ xAxis: thresholdValue }] }
+          }]
+        });
+        initChart("personPieChart", pieOption(destinations.map(item => ({ name: item.name, value: item.value }))));
+        initChart("personCityChart", topOption(destinations, "#1e5aa8"));
+      });
+    }
+
+    function renderFlowPanel() {
+      const flowA = ["个人出差数据", "计算应考核天数", "计算个人出差率", "匹配阈值表", "判断是否低于阈值下限", "低于则异常，未低于则达标", "进入异常人员清单", "下钻个人明细"];
+      const flowB = ["个人出差数据", "匹配区域边界配置", "判断是否跨区域", "非跨区域不纳入统计", "计算跨区域出差率", "匹配报备记录和阈值表", "判断未报备/超阈值", "进入异常人员清单", "下钻个人明细"];
+      const makeFlow = items => `<div class="flow">${items.map((item, index) => `${index ? "<span class='flow-arrow'>→</span>" : ""}<span class="flow-step">${item}</span>`).join("")}</div>`;
+      return `
+        <div class="panel">
+          <div class="panel-head"><h3 class="panel-title">异常判断流程图</h3><span class="panel-note">CSS 卡片流程，展示原型判断链路</span></div>
+          <div class="flow-grid">
+            <div>
+              <h4 class="panel-title">运营/职能部门异常判断流程</h4>
+              ${makeFlow(flowA)}
+            </div>
+            <div>
+              <h4 class="panel-title">营销大区异常判断流程</h4>
+              ${makeFlow(flowB)}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderExplainPanel() {
+      return `
+        <div class="panel">
+          <div class="panel-head"><h3 class="panel-title">指标解释区</h3><span class="panel-note">集中说明核心指标口径</span></div>
+          <div class="explain-grid">
+            <div class="explain-card"><h4>总体达标率</h4><p>达标人数 / 综合人数 × 100%。达标人数为当前筛选条件下未命中异常规则的人数。</p></div>
+            <div class="explain-card"><h4>总体异常率</h4><p>异常人数 / 综合人数 × 100%。异常人数为存在任一异常类型的人数。</p></div>
+            <div class="explain-card"><h4>人均出差天数</h4><p>出差总天数 / 综合人数，用于替代总出差人天进行单位间对比。</p></div>
+            <div class="explain-card"><h4>营销大区跨区域出差率</h4><p>跨区域出差天数 / 应考核天数。目的地不属于所属大区区域边界的，计为跨区域出差。</p></div>
+            <div class="explain-card"><h4>运营/职能部门达标率</h4><p>个人出差率不低于阈值下限则达标；个人出差率 = 出差天数 / 应考核天数。</p></div>
+            <div class="explain-card"><h4>异常类型</h4><p>包括低于出差下限、未报备跨区域出差、跨区域出差超阈值、单一地市/区县占比超阈值、数据待核验。</p></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function render() {
+      disposeCharts();
+      updateNavAndPath();
+      if (appState.view === "overview") renderOverview();
+      if (appState.view === "unit") renderUnitDrill();
+      if (appState.view === "board") renderBoardOrEmployee("班子");
+      if (appState.view === "employee") renderBoardOrEmployee("员工");
+      if (appState.view === "person") renderPersonDetail();
+    }
+
+    window.addEventListener("resize", () => chartPool.forEach(chart => chart.resize()));
+    renderFilters();
+    render();
+  </script>
+</body>
+</html>
